@@ -26,7 +26,10 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
     Jack.hierarchy["body"].transform.translation = {0,0,3};
 
     //Swarm
-    miel_pops.setup_swarm(shaders);
+    miel_pops.setup_swarm(shaders, scene);
+    //vec3 v = {0,0,7};
+    miel_pops.target = &miel_pops.ruche.uniform.transform.translation;
+    miel_pops.environment = &landscape;
 
     gui.show_frame_camera = false;
 
@@ -43,7 +46,13 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     glPolygonOffset( 1.0, 1.0 );
 
     //Display swarm
-    miel_pops.draw_swarm(shaders, scene, timer);
+    if (gui_scene.swarw_behavior == 1)
+        miel_pops.target = &Jack.hierarchy["body"].transform.translation;
+    else
+        miel_pops.target = &miel_pops.ruche.uniform.transform.translation;
+
+    if (gui_scene.bees)
+        miel_pops.draw_swarm(shaders, scene, timer);
 
 
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
@@ -54,12 +63,6 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
 
     //Draw terrain
     landscape.draw_terrain(shaders, scene, landscape.gui_ter, timer.t);
-
-
-    //arranger le shader sea et ajouter le shader sea_wireframe
-    //prendre en compte le choix de shader surface ou wireframe
-    //La structure gui_terrain_structure est inutile?
-
  }
 
 
@@ -77,10 +80,13 @@ void scene_model::set_gui()
     ImGui::SameLine();
     ImGui::Checkbox("Jack", &gui_scene.sbdy);
     ImGui::SameLine();
-    //ImGui::Checkbox("Surface", &gui_scene.surface);
+    ImGui::Checkbox("Bees", &gui_scene.bees);
+    ImGui::SameLine();
+
 
     landscape.gui_ter.set_gui_terrain(gui_scene.surface, gui_scene.wireframe, landscape.vegetation_position);
     Jack.gui_bon.set_gui_bonhomme(gui_scene.surface, gui_scene.wireframe);
+    miel_pops.gui_bee.set_gui_bees(gui_scene.surface, gui_scene.wireframe);
 
     //ImGui::SliderFloat("Time", &timer.t, timer.t_min, timer.t_max);
     //ImGui::SliderFloat("Time scale", &timer.scale, 0.1f, 3.0f);
@@ -92,6 +98,8 @@ void scene_model::set_gui()
     ImGui::Text("Up/Left/Right : Move Jack");
     ImGui::Text("P : Activate/deactivate Third Person Camera");
     ImGui::Text("Shift + Left Click : Add an element of vegetation");
+    ImGui::Text("Spacebar : Make the bee swarm attack/stop attacking Jack");
+
 
 
 }
@@ -139,6 +147,19 @@ void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
     {
         Jack.gui_bon.third_person = !Jack.gui_bon.third_person;
+    }
+
+    //Bees attack
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    {
+        if (gui_scene.swarw_behavior == 0)
+        {
+            gui_scene.swarw_behavior = 1;
+            //miel_pops.target = &Jack.hierarchy["body"].transform.translation;
+        }
+        else
+            gui_scene.swarw_behavior = 0;
+            //miel_pops.target = &miel_pops.ruche.uniform.transform.translation;
     }
 
 }

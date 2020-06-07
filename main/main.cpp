@@ -43,8 +43,6 @@ void keyboard_input_callback(GLFWwindow* window, int key, int scancode, int acti
 
 int main()
 {
-
-
     // ************************************** //
     // Initialization and data setup
     // ************************************** //

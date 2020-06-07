@@ -78,6 +78,7 @@ void terrain::create_sea(float height)
     mesh m_sea;
     m_sea.position.resize(N*N);
     m_sea.texture_uv.resize(N*N);
+    m_sea.color.resize(N*N);
 
     for(int ku=0; ku<N; ku++)
     {
@@ -87,6 +88,38 @@ void terrain::create_sea(float height)
             const float v = kv/(N-1.0f);
             m_sea.position[kv+N*ku] = {40*(u-0.5f), 40*(v-0.5f), 0.4f*perlin(5*u, 5*v, 7, height + 0.66f)};
             m_sea.texture_uv[kv+N*ku] = {4*u, 4*v};
+
+            if(gui_ter.ground)
+            {
+                float h = points[kv + N*ku][2];
+                if (h > 1.0f)
+                    h = 2.0f-h;
+                if (h > 0.0f)
+                {
+                    float coef = h;
+                    vec4 c = (1-coef) * vec4(1, 1, 1, 1);
+                    c += coef * (perlin(100*u, 100*v, 5, 1.0f) - 1.0f) * vec4(0.7f, 0.7f, 0.7f, 1.0f);
+
+                    m_sea.color[kv+N*ku] = c;
+                    m_sea.position[kv + N*ku][2] += 0.3f* coef * perlin(100*u, 100*v, 5, 0.5f);
+                }
+                else if (h > -0.6f)
+                {
+                    float c, a;
+                    a = (0.6f + h)/0.55f;
+                    c = std::exp(h+0.2f);
+                    m_sea.color[kv+N*ku] = {c, 0.6f + 0.4f*c, 0.8f+0.2f*c, 0.6f + 0.4f*a};
+                }
+                else
+                {
+                    float c, a;
+                    c = std::exp(h+0.1f);
+                    a = std::pow(std::abs(h+0.1f)/3.0f, 1.3f);
+                    m_sea.color[kv+N*ku] = {c, 0.6f + 0.4f*c, 0.8f+0.2f*c, 0.6f + 0.4f*a};
+                }
+            }
+            else
+                m_sea.color[kv+N*ku] = {0, 0.6f, 0.8f, 0.8f};
         }
     }
 
@@ -125,7 +158,7 @@ void terrain::setup_terrain(scene_structure& scene)
 
     texture_id_ground = create_texture_gpu( image_load_png("scenes/shared_assets/textures/island2.png") );
     texture_id_sky = create_texture_gpu( image_load_png("scenes/shared_assets/textures/skybox.png") );
-    texture_id_sea = create_texture_gpu( image_load_png("scenes/shared_assets/textures/sea.png") );
+    texture_id_sea = scene.texture_white;//create_texture_gpu( image_load_png("scenes/shared_assets/textures/sea.png") );
     texture_id_grass = create_texture_gpu( image_load_png("scenes/shared_assets/textures/billboard_grass.png") );
     texture_id_algue = create_texture_gpu( image_load_png("scenes/shared_assets/textures/algue.png") );
     texture_id_bush = create_texture_gpu( image_load_png("scenes/shared_assets/textures/paradis.png") );
@@ -143,6 +176,11 @@ void terrain::setup_terrain(scene_structure& scene)
 void terrain::draw_terrain(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_terrain_structure&, float time)
 {
 
+    if ((gui_ter.ground == false && ground_is_here == true) || (gui_ter.ground == true && ground_is_here == false))
+    {
+        create_sea(0.0f);
+        ground_is_here = !ground_is_here;
+    }
 
 
         //Display ground
@@ -208,10 +246,12 @@ void terrain::draw_terrain(std::map<std::string,GLuint>& shaders, scene_structur
         glDepthMask(true);
         //Display sea
         if(gui_ter.sea)
+        {
             if(gui_ter.surface)
                 draw_sea(sea, scene.camera, shaders["sea"], time);
             if(gui_ter.wireframe)
                 draw_sea(sea, scene.camera, shaders["sea_wireframe"], time);
+        }
 
         glDepthMask(false);
         //Display bushes
@@ -341,6 +381,8 @@ void terrain::draw_sea(const mesh_drawable& drawable, const camera_scene& camera
 
     // Send all uniform values to the shader
     uniform(shader, "color_alpha", drawable.uniform.color_alpha);                opengl_debug();
+    uniform(shader, "color", drawable.uniform.color);                opengl_debug();
+
 
     uniform(shader,"perspective",camera.perspective.matrix());         opengl_debug();
     uniform(shader,"view",camera.view_matrix());                       opengl_debug();

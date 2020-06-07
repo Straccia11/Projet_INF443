@@ -14,6 +14,8 @@ struct gui_scene_structure
     bool wireframe = false;
     bool surface = true;
     bool sbdy = true;
+    bool bees = true;
+    int swarw_behavior = 0;
 
 };
 

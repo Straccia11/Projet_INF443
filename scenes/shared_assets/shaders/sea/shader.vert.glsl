@@ -33,7 +33,8 @@ void main()
 
     fragment.position = position_transformed;
     fragment.normal = vec4(0.2*3.1415926*sin(3.1415926 * (16*abs+time/2.0f)), 0.2f*3.1415926*sin(3.1415926 * (16*abs+time/2.0f)), 2.0, 1.0)/3 + normal;
-    fragment.color = color + vec4(0.0, 0.0, 0.0,-0.3f + 0.1f*cos(3.1415926 * (16*abs+time/2.0f)));
+    //fragment.color = vec4(0.0, 0.5, 0.7,0.8f + 0.1f*cos(3.1415926 * (16*abs+time/2.0f)));
+    fragment.color = color;
     fragment.texture_uv = texture_uv;
 
 

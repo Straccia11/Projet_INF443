@@ -93,14 +93,14 @@ void bonhomme::draw_dude(std::map<std::string,GLuint>& shaders, scene_structure&
     /** *************************************************************  **/
 
     const float radius_body = 0.1f/2;
-    //const float radius_head = 0.30f/2;
+    const float radius_head = 0.30f/2;
     const float height_body = 1.5f/2;
     //const float width_pelvis = 0.25f/2;
     const float width_chest = 4*radius_body;
 
+    float h = hierarchy["body"].transform.translation[2];
 
-
-    if(!gui_bon.running)
+    if(!gui_bon.running && h >= 0.0f)
     {
         mat3 const I = {1,0,0, 0,1,0, 0,0,1};
         mat3 const R_y_sym = {1,0,0, 0,-1,0, 0,0,1};
@@ -109,14 +109,11 @@ void bonhomme::draw_dude(std::map<std::string,GLuint>& shaders, scene_structure&
         //Movement of the arms
         mat3 const R_fore_rest = rotation_from_axis_angle_mat3({1,0,0}, -0.2f - 0.05f*std::sin(2*3.14f*(t)));
 
-
-
         // Set the rotation to the elements in the hierarchy
         //Oscillation of the shoulders
         hierarchy["chest"].transform.translation = {0,-width_chest/2, 4*height_body/5*0.98f + 0.01f*(1+std::sin(2*3.14f*t))};
-        rotation = rotation + 0.1f*gui_bon.turn;//rotation_from_axis_angle_mat3({0,0,1}, 0.1f + gui_bon.turn*std::sin(0.5f*3.14f*t));
+        rotation = rotation + 0.1f*gui_bon.turn;
         hierarchy["body"].transform.rotation = rotation_from_axis_angle_mat3({0,0,1}, rotation);
-        //hierarchy["body"].transform.translation = position;   //////////////////////////////////////////////////////////////////////////////////////////////////////
         hierarchy["arm_left"].transform.rotation = I;
         hierarchy["arm_right"].transform.rotation = R_y_sym;
         hierarchy["pelvis"].transform.rotation = I;
@@ -129,11 +126,8 @@ void bonhomme::draw_dude(std::map<std::string,GLuint>& shaders, scene_structure&
         hierarchy["head"].transform.rotation = R_head;
         hierarchy["forearm_left"].transform.rotation = R_fore_rest;
         hierarchy["forearm_right"].transform.rotation = R_fore_rest;
-
-        //hierarchy["body"].transform.translation = position;
-
     }
-    else
+    else if (gui_bon.running && h >= 0.0f)
     {
 
 
@@ -177,11 +171,63 @@ void bonhomme::draw_dude(std::map<std::string,GLuint>& shaders, scene_structure&
         vec3 v = {position[0], position[1], points[kv+N*ku][2] + height_body*4/5};
         hierarchy["body"].transform.translation = {position[0], position[1], points[kv+N*ku][2] + height_body*4/5};
     }
+    else if (gui_bon.running && h < 0.0f)
+    {
+        mat3 const R_y_sym = {1,0,0, 0,-1,0, 0,0,1};
+        mat3 const R_x_sym = {-1,0,0, 0,1,0, 0,0,1};
+        mat3 const Lean_body = rotation_from_axis_angle_mat3({0,1,0}, 1.4f - 0.15f*std::cos(3.14f*(t)));
+        mat3 const R_head = rotation_from_axis_angle_mat3({0,1,0}, -0.8f+0.2f*std::sin(2*3.14f*(t)));
+        mat3 const R_arm = rotation_from_axis_angle_mat3({0,1,0}, 2*3.14f*(t));
+        mat3 const R_forearm = rotation_from_axis_angle_mat3({0,1,0}, 0.8f*std::sin(2*3.14f*(t)));
+        mat3 const R_leg = rotation_from_axis_angle_mat3({0,1,0}, 0.3f*std::sin(4*3.14f*(t)));
+
+        rotation = rotation + 0.1f*gui_bon.turn;
+        hierarchy["body"].transform.rotation = rotation_from_axis_angle_mat3({0,0,1}, rotation)*Lean_body;
+        hierarchy["head"].transform.rotation = R_head;
+        hierarchy["head"].transform.translation = {-0.1f,0,height_body+radius_head-0.1f};
+        hierarchy["arm_left"].transform.rotation = R_arm*rotation_from_axis_angle_mat3({0,1,0}, 3.14f);
+        hierarchy["arm_right"].transform.rotation = R_y_sym*R_arm;
+        hierarchy["forearm_left"].transform.rotation = R_y_sym*R_forearm;
+        hierarchy["forearm_right"].transform.rotation = R_y_sym*R_forearm;
+        hierarchy["thigh_left"].transform.rotation = R_leg;
+        hierarchy["thigh_right"].transform.rotation = R_y_sym*R_x_sym*R_leg;
+        hierarchy["leg_left"].transform.rotation = R_leg;
+        hierarchy["leg_right"].transform.rotation = R_leg;
+
+        position = position + vec2(dt*std::cos(rotation), dt*std::sin(rotation));
+        hierarchy["body"].transform.translation = {position[0], position[1], -0.05f};
+
+    }
+    else if (!gui_bon.running && h < 0.0f)
+    {
+        mat3 const R_y_sym = {1,0,0, 0,-1,0, 0,0,1};
+        mat3 const R_x_sym = {-1,0,0, 0,1,0, 0,0,1};
+        mat3 const Lean_body = rotation_from_axis_angle_mat3({0,1,0}, 0.1f*std::cos(3.14f*(t)/2));
+        mat3 const R_head = rotation_from_axis_angle_mat3({0,1,0}, 0.2f+0.2f*std::sin(3.14f*(t)/2));
+        mat3 const R_arm = rotation_from_axis_angle_mat3({1,0,0}, 0.3f+0.1f*std::sin(3.14f*(t)));
+        mat3 const R_forearm = rotation_from_axis_angle_mat3({0,1,0}, 0.8f*std::sin(2*3.14f*(t)));
+        mat3 const R_leg = rotation_from_axis_angle_mat3({0,1,0}, 0.5f*std::sin(2*3.14f*(t)));
+
+        rotation = rotation + 0.1f*gui_bon.turn;
+        hierarchy["body"].transform.rotation = rotation_from_axis_angle_mat3({0,0,1}, rotation)*Lean_body;
+        hierarchy["head"].transform.rotation = R_head;
+        hierarchy["chest"].transform.translation = {0,-width_chest/2, 4*height_body/5*0.98f + 0.01f*(1+std::sin(2*3.14f*t))};
+        hierarchy["arm_left"].transform.rotation = R_arm;
+        hierarchy["arm_right"].transform.rotation = R_y_sym*R_arm;
+
+        hierarchy["thigh_left"].transform.rotation = R_arm;
+        hierarchy["thigh_right"].transform.rotation = R_y_sym*R_x_sym*R_arm;
+        //hierarchy["leg_left"].transform.rotation = R_leg;
+        //hierarchy["leg_right"].transform.rotation = R_leg;
+    }
+
+
+
     if (gui_bon.third_person)
     {
         scene.camera.orientation = rotation_from_axis_angle_mat3({0,0,1}, rotation)*rotation_from_axis_angle_mat3({0,1,0}, -1.27f)*rotation_from_axis_angle_mat3({0,0,1}, -1.57f);
-        scene.camera.translation = -hierarchy["body"].transform.translation + vec3(0,0,-height_body);
-        scene.camera.scale = 2.0f;
+        scene.camera.translation = -hierarchy["body"].transform.translation + vec3(0,0,-height_body-0.5f);
+        scene.camera.scale = 5.0f;
     }
 
     hierarchy.update_local_to_global_coordinates();

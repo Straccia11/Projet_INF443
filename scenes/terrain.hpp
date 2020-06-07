@@ -27,6 +27,7 @@ struct terrain
     vcl::mesh_drawable ground;
     vcl::mesh_drawable sky;
     vcl::mesh_drawable sea;
+    bool ground_is_here = true;
 
     //Structures de la végétation
     vcl::mesh_drawable tree;
